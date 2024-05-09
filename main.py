@@ -4,6 +4,10 @@ import os
 import sys
 import asyncio
 
+import subprocess
+import sys
+import time
+
 from telegram_channel_duplicator.duplicator import Duplicator
 
 
@@ -29,6 +33,18 @@ async def main():
     await duplicator.start()
 
 
+async def wrapper():
+    while True:
+        try:
+            await main()
+        except Exception as e:
+            print(f"Script crashed with error: {e}")
+            print("Restarting script in 5 seconds...")
+            await asyncio.sleep(5)  # Wait for 5 seconds before restarting
+            python = sys.executable
+            subprocess.call([python, sys.argv[0]])
+
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    asyncio.ensure_future(wrapper())  # Schedule wrapper() to run
+    loop.run_forever()

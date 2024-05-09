@@ -71,12 +71,12 @@ class Duplicator:
 
                 if not self.message_preparer.check_whitelist(msg, group["whitelist"]):
                     logger.info(
-                        f"message {msg.message} from {source_channel} not contains whitelist words, skip"
+                        f"message {msg.id} from {source_channel} not contains whitelist words, skip"
                     )
                     continue
 
                 logger.info(
-                    f"sending message {msg.message} to {destination_channel} from {source_channel}"
+                    f"sending message {msg.id} to {destination_channel} from {source_channel}"
                 )
                 destination_message = await self.client.forward_messages(
                     destination_channel.channel_id(), msg
@@ -97,7 +97,7 @@ class Duplicator:
                 datetime.timedelta(seconds=int(self.config["delay"]))
             )
 
-            logger.info(f"detected message editing in {msg.chat_id}, text: {msg.message}, copy editing")
+            logger.info(f"detected message editing in {msg.chat_id}, id: {msg.id}, copy editing")
 
             for dest_msg in destination_messages:
                 new_msg = await self.client.client.edit_message(
@@ -134,7 +134,7 @@ class Duplicator:
 
         for m in new_messages:
             logger.debug(
-                f"parse message with id: {m.id}, text: {m.message}, date: {m.date}"
+                f"parse message with id: {m.id}, date: {m.date}"
             )
 
         if len(new_messages):
