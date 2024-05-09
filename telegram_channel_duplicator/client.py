@@ -60,6 +60,9 @@ class Client:
 
     async def send_message(self, *args, **kwargs):
         return await self.client.send_message(*args, **kwargs)
+    
+    async def forward_messages(self, *args, **kwargs):
+        return await self.client.forward_messages(*args, **kwargs)
 
     async def get_groups(self):
         """

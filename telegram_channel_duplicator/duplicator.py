@@ -64,8 +64,8 @@ class Duplicator:
             if not destination_channel:
                 continue
 
-            if new_messages:
-                new_messages.reverse()
+            # if new_messages:
+            #    new_messages.reverse()
 
             for msg in new_messages:
 
@@ -78,7 +78,7 @@ class Duplicator:
                 logger.info(
                     f"sending message {msg.message} to {destination_channel} from {source_channel}"
                 )
-                destination_message = await self.client.send_message(
+                destination_message = await self.client.forward_messages(
                     destination_channel.channel_id(), msg
                 )
 
