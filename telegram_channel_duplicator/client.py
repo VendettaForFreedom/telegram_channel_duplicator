@@ -47,7 +47,7 @@ class Client:
                 offset_id=0,
                 offset_date=None,
                 add_offset=0,
-                limit=self.config["edit_message_checker_limit"],
+                limit=self.config["message_checker_limit"],
                 max_id=0,
                 min_id=min_id,
                 hash=0,
