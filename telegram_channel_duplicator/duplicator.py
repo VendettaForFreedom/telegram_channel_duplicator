@@ -18,7 +18,7 @@ class Duplicator:
         self.client = Client(self.config)
         self.message_preparer = MessagePreparer(self.config)
         self.sending_message_buffer = SendingMessageBuffer(
-            self.config["edit_message_checker_limit"]
+            self.config["message_checker_limit"]
             * sum([len(g["sources"]) for g in self.config["groups"]])
             * 5
         )
@@ -117,7 +117,7 @@ class Duplicator:
         if not channel_last_id:
             channel_last_id = 0
 
-        min_id = channel_last_id - self.config["edit_message_checker_limit"]
+        min_id = channel_last_id - self.config["message_checker_limit"]
         if min_id < 0:
             min_id = 0
 
