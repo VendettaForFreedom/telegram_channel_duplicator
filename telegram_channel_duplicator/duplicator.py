@@ -5,6 +5,8 @@ from telegram_channel_duplicator.config_controller import ConfigController
 from loguru import logger
 import asyncio
 
+import re
+
 from telegram_channel_duplicator.message_preparer import MessagePreparer
 from telegram_channel_duplicator.sending_message_buffer import SendingMessageBuffer
 
@@ -149,3 +151,51 @@ class Duplicator:
             logger.debug("new message not found")
 
         return new_messages
+    
+    async def getHashtags(self):
+        logger.info("parse conversation account list")
+        self.groups = await self.client.get_groups()
+
+        for group in self.groups:
+            logger.debug(f"process '{group['name']}' group")
+            for source_channel in group["sources"]:
+                if not source_channel:
+                    continue
+                
+                # get all messages from source_channel with chunk size 100
+
+                min_id = 0
+                max_id = 1287
+                chunk_size = 100
+                messages_history = []
+
+                chunk = await self.client.get_last_messages(
+                    source_channel, 
+                    min_id=max_id-chunk_size, 
+                    max_id=max_id,
+                    limit=chunk_size,
+                )
+
+                messages_history.extend(chunk)
+                max_id -= chunk_size
+                logger.debug(f"get {len(messages_history)} messages from {source_channel}")
+                logger.debug(f"max_id: {max_id}")
+                    
+
+                # get size of messages_history
+                logger.debug(f"get {len(messages_history)} messages from {source_channel}")
+                
+                hashtags = []
+                for message in messages_history:
+                    try:
+                        hashtags.extend(re.findall(r'#(\w+)', message.message))
+                    except Exception as e:
+                        logger.error(f"Error: {e}")
+                logger.debug(f"hashtags: {hashtags}")
+
+                # add # to each hashtag and save it to a file
+                with open("hashtags.txt", "w") as f:
+                    for hashtag in hashtags:
+                        f.write(f"#{hashtag}\n")
+                        
+                logger.debug("hashtags saved to file")
