@@ -57,7 +57,7 @@ class Duplicator:
                             group, source_channel, new_messages
                         )
 
-                    await self._process_edited_messages(messages_history)
+                    # await self._process_edited_messages(messages_history)
 
             await asyncio.sleep(self.config["delay"])
 
@@ -162,26 +162,8 @@ class Duplicator:
                 if not source_channel:
                     continue
                 
-                # get all messages from source_channel with chunk size 100
-
-                min_id = 0
-                max_id = 1287
-                chunk_size = 100
-                messages_history = []
-
-                chunk = await self.client.get_last_messages(
-                    source_channel, 
-                    min_id=max_id-chunk_size, 
-                    max_id=max_id,
-                    limit=chunk_size,
-                )
-
-                messages_history.extend(chunk)
-                max_id -= chunk_size
-                logger.debug(f"get {len(messages_history)} messages from {source_channel}")
-                logger.debug(f"max_id: {max_id}")
+                messages_history = await self.client.get_last_messages(source_channel)
                     
-
                 # get size of messages_history
                 logger.debug(f"get {len(messages_history)} messages from {source_channel}")
                 

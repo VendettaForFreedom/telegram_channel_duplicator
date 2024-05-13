@@ -57,11 +57,9 @@ class Client:
         messages = history.messages[::-1]
         return messages
     
-    async def get_messages(self, channel, 
-                                min_id=0, max_id=0, limit=100,
-                                offset_id=0, offset_date=None, add_offset=0, hash=0):
+    async def get_messages(self, channel, limit=None):
         
-        messages = await self.client.get_messages(channel.channel_id(), limit= None)
+        messages = await self.client.get_messages(channel.channel_id(), limit=limit)
         return messages
 
     async def send_message(self, *args, **kwargs):
