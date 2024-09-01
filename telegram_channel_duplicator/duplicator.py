@@ -9,6 +9,10 @@ import re
 
 from telegram_channel_duplicator.message_preparer import MessagePreparer
 from telegram_channel_duplicator.sending_message_buffer import SendingMessageBuffer
+import time
+from datetime import timedelta
+from datetime import timedelta
+import logging
 
 
 class Duplicator:
@@ -27,7 +31,8 @@ class Duplicator:
 
     async def start(self):
         await self.client.start()
-        await self.duplicate()
+        # await self.duplicate()
+        await self.copyAllMessages()
 
     async def duplicate(self):
         logger.info("parse conversation account list")
@@ -162,7 +167,7 @@ class Duplicator:
                 if not source_channel:
                     continue
                 
-                messages_history = await self.client.get_last_messages(source_channel)
+                messages_history = await self.client.get_messages(source_channel)
                     
                 # get size of messages_history
                 logger.debug(f"get {len(messages_history)} messages from {source_channel}")
@@ -181,3 +186,78 @@ class Duplicator:
                         f.write(f"#{hashtag}\n")
                         
                 logger.debug("hashtags saved to file")
+
+    async def copyAllMessages(self):
+        logger.info("parse conversation account list")
+        self.groups = await self.client.get_groups()
+
+        def is_multi_message(msg1, msg2):            
+            time_difference = msg1.date - msg2.date
+            # make sure difference is positive
+            if time_difference.total_seconds() < 0:
+                time_difference = -time_difference
+            logger.debug(f"time difference: {time_difference}")
+            return time_difference < timedelta(minutes=5)
+
+        for group in self.groups:
+            logger.debug(f"process '{group['name']}' group")
+            for source_channel in group["sources"]:
+                if not source_channel:
+                    continue
+                
+                messages_history = await self.client.get_messages(source_channel)
+                    
+                # get size of messages_history
+                logger.debug(f"get {len(messages_history)} messages from {source_channel}")
+                
+                for destination_channel in group["destinations"]:
+                    if not destination_channel:
+                        continue
+
+                    pic_message = None
+                    text_message = None
+                    message_id_pairs = []
+                    for message in reversed(messages_history):
+                        try:
+                            if message.id < 90:
+                                continue  
+                            if pic_message is not None and is_multi_message(pic_message, message) == False:
+                                pic_message = None
+                            if text_message is not None and is_multi_message(message, text_message) == False:
+                                text_message = None   
+
+                            if ((message.photo is not None and pic_message is None) or
+                                (message.text is not None and text_message is None)):                       
+                                
+                                if message.photo is not None:
+                                    if text_message is not None and is_multi_message(message, text_message) or text_message is None:
+                                        pic_message = message
+                                elif message.text is not None:
+                                    if pic_message is not None and is_multi_message(pic_message, message) or pic_message is None:
+                                        text_message = message
+                                    
+                            if pic_message is not None and text_message is not None:
+                                # if is_multi_message(pic_message, message) == False or is_multi_message(message, text_message) == False:
+                                pic_message = await self.client.forward_messages(
+                                    destination_channel.channel_id(), pic_message
+                                )
+                                logger.debug(f"message hasPhoto {pic_message.id}")
+                                time.sleep(1) 
+                                text_message = await self.client.forward_messages(
+                                    destination_channel.channel_id(), text_message
+                                )
+                                logger.debug(f"message hasText {text_message.id}")
+                                time.sleep(1) 
+                                # save message_id_pairs
+                                message_id_pairs.append((text_message.id, pic_message.id))
+                                pic_message = None
+                                text_message = None
+                                    
+    
+                        except Exception as e:
+                            logger.error(f"Error: {e}")
+                    
+                    # save message_id_pairs in a file
+                    with open("message_id_pairs.txt", "w") as f:
+                        for message_id_pair in message_id_pairs:
+                            f.write(f"{message_id_pair[0]} {message_id_pair[1]}\n")
